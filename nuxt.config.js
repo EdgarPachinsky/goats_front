@@ -89,6 +89,7 @@ export default {
   },
 
   server: {
+    host: '91.103.29.205',
     port: 8000
   },
 
