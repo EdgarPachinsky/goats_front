@@ -59,7 +59,7 @@ export default {
 
   data() {
     return {
-      hostPrefix: `http://localhost:3000/file`,
+      hostPrefix: `http://91.103.29.205:3000/file`,
       channels: []
     }
   },

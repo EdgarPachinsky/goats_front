@@ -156,7 +156,7 @@ export default {
       addUserActive: false,
       wsImage: null,
       wsId: null,
-      hostPrefix: `http://localhost:3000/file`,
+      hostPrefix: `http://91.103.29.205:3000/file`,
       name: null,
       description: null,
       image: null,

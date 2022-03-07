@@ -57,7 +57,7 @@ export default {
   data(){
     return{
       timestamp: "",
-      // hostPrefix: `http://localhost:3000/file`,
+      // hostPrefix: `http://91.103.29.205:3000/file`,
       // avatar: null,
     }
   },

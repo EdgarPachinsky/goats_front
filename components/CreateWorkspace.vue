@@ -13,7 +13,7 @@
           <div class="mint-token-prev-container no-center">
             <div class="mint-token-image">
               <img v-if="workspace.image"
-                   :src="'http://localhost:3000/file/'+workspace.image"
+                   :src="'http://91.103.29.205:3000/file/'+workspace.image"
                    alt="Workspace Image">
               <div v-else>Image preview</div>
             </div>

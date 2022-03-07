@@ -206,7 +206,7 @@ export default {
       timestamp: "",
       roles: null,
       isAdmin: false,
-      // userAvatar: `http://localhost:3000/file/${this.$auth.user.avatar ? this.$auth.user.avatar : "placeholder.png"}`,
+      // userAvatar: `http://91.103.29.205:3000/file/${this.$auth.user.avatar ? this.$auth.user.avatar : "placeholder.png"}`,
       // avatarImagePrev: null,
       // avatarImage: null,
       // invitations: [],

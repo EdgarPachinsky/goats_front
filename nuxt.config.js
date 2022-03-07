@@ -48,7 +48,7 @@ export default {
   ],
 
   axios:{
-    baseUrl: "http://localhost:3000/"
+    baseUrl: "http://91.103.29.205:3000/"
   },
 
   auth: {
