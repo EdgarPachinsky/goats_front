@@ -208,6 +208,7 @@ a{
   }
 
   .main-t-body{
+    word-break: break-all;
     width: 100%;
     overflow-x: auto;
   }
@@ -309,7 +310,23 @@ a{
   padding-left: 8px;
   color: $mainColor;
 }
-
+.large-modal{
+  position: fixed;
+  top: 0;
+  z-index: 10;
+  width: 80%;
+  margin: 0 auto;
+  margin-top: 5%;
+  background: white;
+  padding: 10px;
+  @include material-shadow($z-depth: 3, $strength: 1);
+}
+.closeLgModalButton{
+  position: absolute;
+  z-index: 10;
+  right: 0;
+  top: 0;
+}
 
 /* Small devices (portrait tablets and large phones, 600px and up) */
 @media only screen and (max-width: $b_max-width_600) {

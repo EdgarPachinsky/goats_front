@@ -8,6 +8,9 @@ export const state = () => ({
 
   deviceHistory:[],
   loadedHistory: true,
+
+  weightsHistory:[],
+  weightsMax:0,
 })
 
 export const actions = {
@@ -89,6 +92,9 @@ export const actions = {
     })
   },
 
+
+
+
   async transformForSelect_device({ commit }){
 
     await this.$axios.get('/device/list', {}, {
@@ -113,27 +119,80 @@ export const actions = {
     })
   },
 
-  async loadDeviceHistory({ commit }, id){
 
+  async saveDeviceCustomId({ commit }, data){
 
     commit('setLoadedHistory', true)
 
-    this.$axios.get(`/history/by-device/${id}`, {
+    this.$axios.post(`/history/save-by-animal-id`, {
+      animalId: data.animalId,
+      customId: data.customId,
+    },{
       headers: {
         'Authorization': this.$auth.strategy.token.get()
       },
     }).then(({data}) => {
+      console.log(data)
+
+    })
+  },
+
+  async loadDeviceHistory({ commit }, data){
+
+    commit('setLoadedHistory', true)
+
+    this.$axios.get(`/history/by-device/${data.id}`,{
+      headers: {
+        'Authorization': this.$auth.strategy.token.get()
+      },
+    }).then(({data}) => {
+
+      if(data.historyForOneAnimal){
+        return
+      }
+
       commit('setLoadedHistory', false)
 
       let index = 1
       for (const history of data) {
+
         history['#'] = index
         index++
       }
 
       commit('setDeviceHistory', data)
     })
-  }
+  },
+
+  async dropHistory({ commit }){
+    commit('setWeightsHistory', [])
+    commit('setMaxWeight', 0)
+  },
+
+  async loadDeviceHistory_({ commit }, data){
+
+    const data_ = {
+      ...data.animalId && {animalId: data.animalId},
+      ...data.start && {start: data.start},
+      ...data.end && {end: data.end}
+    }
+    console.log(data_)
+    this.$axios.post(`/history/by-device-history/${data.id}`, data_,{
+      headers: {
+        'Authorization': this.$auth.strategy.token.get()
+      },
+    }).then(({data}) => {
+      console.log(data)
+      let weights = []
+      data.map(weightInfo => {
+        weights.push(parseInt(weightInfo.weight))
+      })
+      let maxOfWeights = Math.max(...weights)
+
+      commit('setWeightsHistory', weights)
+      commit('setMaxWeight', maxOfWeights)
+    })
+  },
 }
 
 export const getters = {
@@ -163,5 +222,12 @@ export const mutations = {
   },
   setLoadedHistory(state, data){
     state.loadedHistory = data
+  },
+
+  setWeightsHistory(state, data){
+    state.weightsHistory = data
+  },
+  setMaxWeight(state, data){
+    state.weightsMax = data
   },
 }
