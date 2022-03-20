@@ -328,6 +328,13 @@ a{
   top: 0;
 }
 
+.exportButton{
+  position: absolute;
+  z-index: 10;
+  right: 70px;
+  top: 0;
+}
+
 /* Small devices (portrait tablets and large phones, 600px and up) */
 @media only screen and (max-width: $b_max-width_600) {
   .page-navbar {

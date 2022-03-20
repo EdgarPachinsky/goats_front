@@ -39,6 +39,16 @@
         Close
       </b-button>
 
+      <b-button
+        class="exportButton"
+        type="button"
+        variant="danger"
+        @click="exportCSV()"
+      >
+        Export CSV
+      </b-button>
+
+
       <b-row>
         <b-col sm="12">
           {{currentAnimalIdForGraphic}} ({{graphicTimeStart}} - {{graphicTimeEnd}})
@@ -171,6 +181,7 @@
 import {mapActions, mapState} from "vuex";
 import BarChart from "../../../../components/BarChart";
 import moment from "moment";
+import {Parser} from "json2csv";
 
 export default {
   async asyncData({params}) {
@@ -304,8 +315,8 @@ export default {
 
     async openGraphic(isClose){
       if(isClose) {
-        this.barChartData.labels = [];
-        this.barChartData.datasets[0].data = [];
+        // this.barChartData.labels = [];
+        // this.barChartData.datasets[0].data = [];
         this.showLgModal = !this.showLgModal;
         return
       }
@@ -325,6 +336,20 @@ export default {
       this.showLgModal = !this.showLgModal;
     },
 
+    async exportCSV(){
+
+      let csv = 'Date,Weight\n';
+      for (let i = 0; i < this.barChartData.labels.length; i++) {
+        csv += `${this.barChartData.labels[i]}, ${this.barChartData.datasets[0].data[i] || `-`}`
+        csv += "\n";
+      }
+
+      const anchor = document.createElement('a');
+      anchor.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+      anchor.target = '_blank';
+      anchor.download = 'export.csv';
+      anchor.click();
+    }
   },
 
   async mounted() {
