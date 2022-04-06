@@ -2,6 +2,7 @@
 
   <div>
     <b-modal
+      v-model="show"
       id="modal-center"
       centered
       title="Add Device"
@@ -55,7 +56,7 @@
           SAVE
         </b-button>
         <!-- Button with custom close trigger value -->
-        <b-button size="sm" variant="outline-secondary" @click="hide('forget')">
+        <b-button size="sm" variant="outline-secondary" @click="show=false">
           CLOSE
         </b-button>
       </template>
@@ -71,7 +72,7 @@
       type="button"
       variant="danger"
       class="margin-bottom-15"
-      v-b-modal.modal-center
+      @click="show=true"
     >Add Device</b-button>
 
     <b-row>
@@ -90,7 +91,7 @@
               size="sm"
               v-b-modal.modal-center
               @click="loadCurrentDeviceAction(data.item._id)"
-            >EDIT
+            >EDIT <b-icon icon="pencil" aria-hidden="true"></b-icon>
             </b-button>
             <b-button
               type="button"
@@ -99,7 +100,8 @@
               size="sm"
               :disabled="data.item._id===$auth.user._id"
               @click="deleteDeviceAction(data.item._id)"
-            >DELETE
+            >
+              DELETE <b-icon icon="trash" aria-hidden="true"></b-icon>
             </b-button>
 
           </template>
@@ -145,6 +147,8 @@ export default {
 
   data() {
     return {
+      toastCount:0,
+      show:false,
       fields: [
         { key: '#', label: '#',
           thStyle: {
@@ -173,6 +177,19 @@ export default {
   methods:{
     ...mapActions('device', ['loadDevices', 'saveDevice', 'deleteDevice', 'loadCurrentDevice']),
 
+    reloadPage(){
+      window.location.reload(true);
+    },
+
+    makeToast(append = false, message) {
+      this.toastCount++
+      this.$bvToast.toast(message, {
+        title: 'Action Done',
+        autoHideDelay: 4000,
+        appendToast: append
+      })
+    },
+
     fileChange(event) {
 
       if (!event.target.files)
@@ -184,16 +201,26 @@ export default {
 
     async saveDeviceAction(){
 
-      await this.saveDevice({
+      this.saveDevice({
         ...this.isEdit && {
           _id: this._id
         },
         'name': this.name,
         'parameters': this.params,
         'deviceNumber': this.deviceNumber,
-      })
+      }).then((data) => {
 
-      this.loadDevices()
+        let message = ``
+        if(data && data.result) {
+          let result = data.result
+          message = result.message
+        }
+
+        this.makeToast(false, message)
+        this.show = false
+
+        this.loadDevices()
+      })
     },
 
     clearAllParams(){
@@ -201,8 +228,12 @@ export default {
     },
 
     async deleteDeviceAction(id){
-      await this.deleteDevice(id)
-      this.loadDevices()
+      this.deleteDevice(id)
+      .then((data) => {
+
+        this.makeToast(false, `Device[${id}] deleted!`)
+        this.loadDevices()
+      })
     },
 
     async loadCurrentDeviceAction(id){
@@ -218,7 +249,7 @@ export default {
 
 
   async mounted() {
-    $nuxt.$emit('setPageTitle', {title: 'Users List'})
+    $nuxt.$emit('setPageTitle', {title: 'Device List'})
     const admin = await this.$store.dispatch('user/isAdmin', this.$auth.user)
     if(!admin)
       await this.$router.push('/user/cabinet')

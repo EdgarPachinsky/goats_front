@@ -52,28 +52,27 @@ export const actions = {
 
   async saveDevice({ commit }, dataToSave){
 
-    console.log(dataToSave)
-    await this.$axios.post('/device/save', dataToSave, {
+    return  this.$axios.post('/device/save', dataToSave, {
       headers: {
         'Authorization': this.$auth.strategy.token.get()
       },
     }).then(({data}) => {
-      console.log(data)
+      return data
     }).catch((err) => {
-      console.log(err)
+      return err
     })
   },
 
   async deleteDevice({ commit }, id){
 
-    await this.$axios.delete(`/device/delete/${id}`, {
+    return this.$axios.delete(`/device/delete/${id}`, {
       headers: {
         'Authorization': this.$auth.strategy.token.get()
       },
     }).then(({data}) => {
-      console.log(data)
+      return data
     }).catch((err) => {
-      console.log(err)
+      return err
     })
   },
 
@@ -124,7 +123,7 @@ export const actions = {
 
     commit('setLoadedHistory', true)
 
-    this.$axios.post(`/history/save-by-animal-id`, {
+    return this.$axios.post(`/history/save-by-animal-id`, {
       animalId: data.animalId,
       customId: data.customId,
     },{
@@ -132,8 +131,7 @@ export const actions = {
         'Authorization': this.$auth.strategy.token.get()
       },
     }).then(({data}) => {
-      console.log(data)
-
+      return data
     })
   },
 
@@ -155,7 +153,6 @@ export const actions = {
 
       let index = 1
       for (const history of data) {
-
         history['#'] = index
         index++
       }
@@ -176,13 +173,13 @@ export const actions = {
       ...data.start && {start: data.start},
       ...data.end && {end: data.end}
     }
-    console.log(data_)
-    this.$axios.post(`/history/by-device-history/${data.id}`, data_,{
+
+    return this.$axios.post(`/history/by-device-history/${data.id}`, data_,{
       headers: {
         'Authorization': this.$auth.strategy.token.get()
       },
     }).then(({data}) => {
-      console.log(data)
+
       let weights = []
       data.map(weightInfo => {
         weights.push(parseInt(weightInfo.weight))
@@ -191,8 +188,31 @@ export const actions = {
 
       commit('setWeightsHistory', weights)
       commit('setMaxWeight', maxOfWeights)
+      return true
     })
   },
+
+
+  deleteHistoryElement_({ commit }, data) {
+    let url = `/history/delete`
+
+    if(data.many){
+      url += `-many`;
+
+      if(!data.customId){
+        delete data.customId
+      }
+    }
+    delete data.many
+
+    return this.$axios.post(url, data, {
+      headers: {
+        'Authorization': this.$auth.strategy.token.get()
+      },
+    }).then(({data}) => {
+      return data
+    })
+  }
 }
 
 export const getters = {

@@ -2,6 +2,7 @@
 
   <div>
     <b-modal
+      v-model="show"
       id="modal-center"
       centered
       title="Add user"
@@ -77,7 +78,7 @@
           SAVE
         </b-button>
         <!-- Button with custom close trigger value -->
-        <b-button size="sm" variant="outline-secondary" @click="hide('forget')">
+        <b-button size="sm" variant="outline-secondary" @click="show=false">
           CLOSE
         </b-button>
       </template>
@@ -129,7 +130,7 @@
                 size="sm"
                 v-b-modal.modal-center
                 @click="loadCurrentUser(data.item._id)"
-              >EDIT
+              >EDIT <b-icon icon="pencil" aria-hidden="true"></b-icon>
               </b-button>
               <b-button
                 type="button"
@@ -138,7 +139,8 @@
                 size="sm"
                 :disabled="data.item._id===$auth.user._id"
                 @click="deleteUserAction(data.item._id)"
-              >DELETE
+              >
+                DELETE <b-icon icon="trash" aria-hidden="true"></b-icon>
               </b-button>
 
             </template>
@@ -195,6 +197,8 @@ export default {
 
   data() {
     return {
+      show: false,
+      toastCount: 0,
       fields: [
         { key: '#', label: '#',
           thStyle: {
@@ -237,11 +241,27 @@ export default {
     ...mapActions('device', ['loadDevices', 'transformForSelect_device']),
     ...mapActions('role', ['transformForSelect_role']),
 
+    reloadPage(){
+      window.location.reload(true);
+    },
+
+    makeToast(append = false, message) {
+      this.toastCount++
+      this.$bvToast.toast(message, {
+        title: 'Action Done',
+        autoHideDelay: 4000,
+        appendToast: append
+      })
+    },
+
+    hideModal() {
+      this.$root.$emit('bv::hide::modal', 'modal-1', '#btnShow')
+    },
 
     loadSelectValues() {
       this.isEdit = false
       this.clearCurrentUser();
-
+      this.show = true
       this.fullName = null
       this.username = null
       this.email = null
@@ -273,7 +293,7 @@ export default {
 
     async saveUserAction(){
 
-      await this.saveUser({
+      this.saveUser({
         ...this.isEdit && {
           _id: this._id
         },
@@ -284,21 +304,36 @@ export default {
         'isDisabled': this.isDisabled,
         'role': this.selected_roles,
         'device': this.selected_devices
+      }).then((data) => {
+
+        let message = ``
+        if(data && data.result) {
+          let result = data.result
+          message = result.message
+        }
+
+        this.makeToast(false, message)
+        this.show = false
+        this.loadUser()
       })
-      this.loadUser()
     },
 
     async deleteUserAction(userId){
-      await this.deleteUser(userId)
-      this.loadUser()
+      this.deleteUser(userId).then((data) => {
+        this.makeToast(false, `User deleted`)
+        this.loadUser()
+      })
     },
 
     async changeStatus(userId){
-      await this.changeUserStatus(userId)
-      this.loadUser()
+      this.changeUserStatus(userId)
+      .then(() => {
+
+        this.makeToast(false, `Status Changed!`)
+        this.loadUser()
+      })
     }
   },
-
 
   async mounted() {
     $nuxt.$emit('setPageTitle', {title: 'Users List'})

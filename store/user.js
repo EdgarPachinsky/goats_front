@@ -48,42 +48,42 @@ export const actions = {
 
   async saveUser({ commit }, dataToSave){
 
-    await this.$axios.post('/user/save', dataToSave, {
+    return this.$axios.post('/user/save', dataToSave, {
       headers: {
         'Authorization': this.$auth.strategy.token.get()
       },
     }).then(({data}) => {
-      console.log(data)
+      return data
     }).catch((err) => {
-      console.log(err)
+      return err
     })
   },
 
   async deleteUser({ commit }, userId){
 
-    await this.$axios.delete(`/user/delete/${userId}`, {
+    return this.$axios.delete(`/user/delete/${userId}`, {
       headers: {
         'Authorization': this.$auth.strategy.token.get()
       },
     }).then(({data}) => {
-      console.log(data)
+      return data
     }).catch((err) => {
-      console.log(err)
+      return err
     })
   },
 
   async changeUserStatus({ commit }, userId){
 
-    await this.$axios.post(`/user/change-status`, {
+    return this.$axios.post(`/user/change-status`, {
       _id:userId
     }, {
       headers: {
         'Authorization': this.$auth.strategy.token.get()
       },
     }).then(({data}) => {
-      console.log(data)
+      return data
     }).catch((err) => {
-      console.log(err)
+      return err
     })
   },
 

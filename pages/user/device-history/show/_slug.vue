@@ -11,6 +11,11 @@
       variant="danger"
       to="/user/my-device/list">My Devices</b-button>
 
+    <b-button
+      type="button"
+      variant="danger"
+      @click="reloadPage()">Reload Page</b-button>
+
     <b-modal id="modal-1" size="md" title="History for animal">
       <template v-if="currentAnimalIdForGraphic">
         {{currentAnimalIdForGraphic}} ({{graphicTimeStart}} - {{graphicTimeEnd}})
@@ -106,10 +111,28 @@
       </b-col>
 
       <b-col sm="12" md="3" lg="3">
-        <b-form-group
-            id="input-group-4" label="_" label-for="graphicGet">
-          <b-button class="margin-top-0 w-100" id="graphicGet" @click="openGraphic(false)">Get Graphic</b-button>
-        </b-form-group>
+
+        <b-row>
+          <b-col sm="6" md="6" lg="6">
+            <b-form-group
+              id="input-group-4" label="_" label-for="graphicGet">
+              <b-button class="margin-top-0 w-100" id="graphicGet" @click="openGraphic(false)">
+                Graph <b-icon icon="graph-up" aria-hidden="true"></b-icon>
+              </b-button>
+            </b-form-group>
+          </b-col>
+
+          <b-col sm="6" md="6" lg="6">
+            <b-form-group
+              id="input-group-4" label="_" label-for="graphicGet">
+              <b-button
+                variant="outline-danger"
+                class="margin-top-0 w-100" id="graphicGet" @click="deleteHistoryElement(false, null, null)">
+                DELETE <b-icon icon="trash" aria-hidden="true"></b-icon>
+              </b-button>
+            </b-form-group>
+          </b-col>
+        </b-row>
       </b-col>
     </b-row>
 
@@ -120,7 +143,7 @@
           v-model="currentIdForCustomId"
           id="animalId"
           placeholder="Current ID"
-          type="text"
+          type="number"
         ></b-form-input>
       </b-col>
       <b-col sm="12" md="4" lg="4">
@@ -140,6 +163,7 @@
         </b-button>
       </b-col>
     </b-row>
+
 
     <hr>
     <b-row>
@@ -163,6 +187,21 @@
               </div>
             </template>
 
+            <template
+              #cell(actions)="data">
+              <b-button
+                type="button"
+                variant="outline-danger"
+                class="margin-bottom-15"
+                size="sm"
+                :disabled="data.item._id===$auth.user._id"
+                @click="deleteHistoryElement(true, data.item._id, data.item.customId)"
+              >
+                DELETE <b-icon icon="trash" aria-hidden="true"></b-icon>
+              </b-button>
+
+            </template>
+
           </b-table>
 
           <b-pagination
@@ -181,11 +220,10 @@
 import {mapActions, mapState} from "vuex";
 import BarChart from "../../../../components/BarChart";
 import moment from "moment";
-import {Parser} from "json2csv";
 
 export default {
   async asyncData({params}) {
-    const slug = params.slug // When calling /abc the slug will be "abc"
+    const slug = params.slug
     return {slug}
   },
 
@@ -197,7 +235,7 @@ export default {
 
   data() {
     return {
-
+      toastCount: 0,
       showLgModal: false,
       barChartData: {
         labels: [],
@@ -266,7 +304,8 @@ export default {
         {key: 'animalId', label: 'Animal ID'},
         'weight',
         {key: 'createdAt', label: 'Created at'},
-        {key: 'updatedAt', label: 'Updated at'}
+        {key: 'updatedAt', label: 'Updated at'},
+        {key: 'actions', label: 'Actions'},
       ],
 
       currentAnimalIdForGraphic:null,
@@ -278,7 +317,28 @@ export default {
   },
 
   methods: {
-    ...mapActions('device', ['loadDeviceHistory', 'loadDeviceHistory_','saveDeviceCustomId', 'dropHistory']),
+    ...mapActions('device',
+      [
+        'loadDeviceHistory',
+        'loadDeviceHistory_',
+        'saveDeviceCustomId',
+        'dropHistory',
+        'deleteHistoryElement_'
+      ]
+    ),
+
+    reloadPage(){
+      window.location.reload(true);
+    },
+
+    makeToast(append = false, message) {
+      this.toastCount++
+      this.$bvToast.toast(message, {
+        title: 'Action Done',
+        autoHideDelay: 4000,
+        appendToast: append
+      })
+    },
 
     enumerateDaysBetweenDates(startDate, endDate) {
       var dates = [];
@@ -303,37 +363,102 @@ export default {
 
     async saveCustomId(){
 
-      await this.saveDeviceCustomId({
-        animalId: this.currentIdForCustomId,
-        customId: this.currentValueForCustomId,
-      })
+      if(
+        !this.currentIdForCustomId ||
+        !this.currentValueForCustomId
+      ){
+        this.makeToast(false, `Current ID and custom ID must be specified!`)
+        return
+      }
 
-      this.currentIdForCustomId = null
-      this.currentValueForCustomId = null
-      await this.loadDeviceHistory({id:this.slug})
+      this.saveDeviceCustomId({
+        animalId: this.currentIdForCustomId,
+        customId: this.currentValueForCustomId
+      }).then(async (data) => {
+        this.makeToast(false, `Updated ${data.nModified} records,
+        Current ID[${this.currentIdForCustomId}] -> Custom ID[${this.currentValueForCustomId}]!`)
+
+        this.currentIdForCustomId = null
+        this.currentValueForCustomId = null
+        await this.loadDeviceHistory({id:this.slug})
+      })
+    },
+
+    async deleteHistoryElement(singleRecord, elementId, customId){
+      if(singleRecord){
+
+        this.deleteHistoryElement_({
+          _id: elementId,
+          many: false
+        }).then(async (data) => {
+
+          let message = `Deleted history record for ${customId}(${elementId})`;
+          this.makeToast(false, message)
+
+          await this.loadDeviceHistory({id:this.slug})
+        })
+      }else{
+
+        if(
+          !this.graphicTimeStart ||
+          !this.graphicTimeEnd
+        ){
+          this.makeToast(false, `Start and end dates must be specified!`)
+          return
+        }
+
+        this.deleteHistoryElement_({
+          customId: this.currentAnimalIdForGraphic,
+          createdAt: {
+            $gte: this.graphicTimeStart,
+            $lte: this.graphicTimeEnd
+          },
+          many: true
+        }).then(async (data) => {
+
+          let message = `Deleted history from ${this.graphicTimeStart} to ${this.graphicTimeEnd}`;
+          if(this.currentAnimalIdForGraphic){
+            message += `, for ID ${this.currentAnimalIdForGraphic}`
+          }
+          if(data.deletedCount){
+            message += `, deleted count ${data.deletedCount}`
+          }
+
+          this.makeToast(false, message)
+          await this.loadDeviceHistory({id:this.slug})
+        })
+      }
     },
 
     async openGraphic(isClose){
       if(isClose) {
-        // this.barChartData.labels = [];
-        // this.barChartData.datasets[0].data = [];
         this.showLgModal = !this.showLgModal;
         return
       }
 
+      if(
+        !this.currentAnimalIdForGraphic ||
+        !this.graphicTimeStart ||
+        !this.graphicTimeEnd
+      ){
+        this.makeToast(false, `Animal ID, start date and end date must be specified!`)
+      }
+
+
       const dates = this.enumerateDaysBetweenDates(this.graphicTimeStart, this.graphicTimeEnd);
 
-      await this.loadDeviceHistory_({
+      this.loadDeviceHistory_({
         id: this.slug,
         start: dates[0],
         end: dates[dates.length - 1],
         historyForOneAnimal:true,
         animalId: this.currentAnimalIdForGraphic
-      })
+      }).then(() => {
 
-      this.barChartData.labels = dates;
-      this.barChartData.datasets[0].data = this.weightsHistory;
-      this.showLgModal = !this.showLgModal;
+        this.barChartData.labels = dates;
+        this.barChartData.datasets[0].data = this.weightsHistory;
+        this.showLgModal = !this.showLgModal;
+      })
     },
 
     async exportCSV(){
@@ -344,10 +469,22 @@ export default {
         csv += "\n";
       }
 
+      let extension = `csv`
       const anchor = document.createElement('a');
       anchor.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
       anchor.target = '_blank';
-      anchor.download = 'export.csv';
+
+      let downloadUrl = `Weight_export_${this.currentAnimalIdForGraphic}`;
+      if(this.graphicTimeStart){
+        downloadUrl += `_${this.graphicTimeStart}`
+      }
+      if(this.graphicTimeEnd){
+        downloadUrl += `_${this.graphicTimeEnd}`;
+      }
+
+      downloadUrl += `.${extension}`;
+
+      anchor.download = downloadUrl;
       anchor.click();
     }
   },
